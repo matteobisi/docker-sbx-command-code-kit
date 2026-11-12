@@ -1,0 +1,100 @@
+# syntax=docker/sandbox-kit:3
+schemaVersion: "3"
+displayName: Command Code (cmd)
+author: "Matteo Bisi"
+description: >-
+  The Command Code TUI (cmd) as a complete sandbox workload: Node.js 22 base,
+  the CLI installed with npm i -g command-code@latest, the GitHub CLI as a
+  second command, proxy-managed credentials, scoped egress, and a sandbox
+  AGENTS.md.
+sourceUrl: https://github.com/matteobisi/docker-sbx-command-code-kit
+
+kind: workload
+
+args:
+  version:
+    default: "latest"
+    pattern: '^(latest|[0-9]+\.[0-9]+\.[0-9]+)$'
+    description: Command Code release to install (latest, or x.y.z to pin)
+    buildArg: COMMAND_CODE_VERSION
+  ghVersion:
+    default: "2.103.3"
+    pattern: '^[0-9]+\.[0-9]+\.[0-9]+$'
+    description: GitHub CLI release to install
+    buildArg: GH_VERSION
+
+capabilities:
+  # The host launches the agent instead of running the image entrypoint as
+  # PID 1, and honors the identity the image config declares.
+  - type: com.docker.sandbox/sbx@1
+
+  # api.commandcode.ai carries every model call, the model catalog, and the
+  # account check. The GitHub hosts are for gh, not for the agent.
+  - type: com.docker.sandbox/network-policy@1
+    config:
+      runtime:
+        allow:
+          - api.commandcode.ai:443
+          - api.github.com:443
+          - github.com:443
+
+  - type: com.docker.sandbox/credential@1
+    description: Command Code API access
+    config:
+      service: commandcode
+      phase: runtime
+      apiKey:
+        name: COMMAND_CODE_API_KEY
+        proxyManaged: true
+        inject:
+          - domain: api.commandcode.ai
+            header: Authorization
+            format: "Bearer %s"
+
+  # The built-in github service, reused by a third-party kit. Approve the
+  # binding on first create, or write it to ~/.config/sbx/credentials.yaml.
+  - type: com.docker.sandbox/credential@1
+    optional: true
+    description: GitHub API access for gh
+    config:
+      service: github
+      phase: runtime
+      apiKey:
+        name: GH_TOKEN
+        proxyManaged: true
+        inject:
+          - domain: api.github.com
+            header: Authorization
+            format: "Bearer %s"
+          - domain: github.com
+            header: Authorization
+            format: "Bearer %s"
+
+  - type: com.docker.sandbox/agent-context@1
+    config:
+      filename: AGENTS.md
+      directory: /home/agent/.commandcode
+      content: |
+        # Command Code sandbox
+
+        You are running inside a Docker Sandboxes microVM, not on the
+        developer's laptop.
+
+        The workspace is mounted read-write and changes are visible on the
+        host immediately. Everything outside the workspace is out of reach:
+        no SSH keys, no shell history, no host Docker daemon.
+
+        `COMMAND_CODE_API_KEY` and `GH_TOKEN` hold the placeholder
+        `proxy-managed`. The host proxy injects the real credentials, so never
+        print, copy, or try to "fix" those values.
+
+        Outbound network access is limited to `api.commandcode.ai`,
+        `api.github.com`, and `github.com`. A 403 from any other host is the
+        policy working, not a bug.
+
+        `gh` is installed and authenticated by the proxy. `gh auth status`
+        should report a valid session even though the token in the
+        environment is a placeholder.
+
+        Persist environment variables needed by later shells in
+        `/etc/sandbox-persistent.sh`.
