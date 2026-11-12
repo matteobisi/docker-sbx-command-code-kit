@@ -184,25 +184,26 @@ both rather than assuming, building for arm64 with the same Command Code release
 
 | Base | Base size | Final as built | After `npm cache clean` |
 |---|---|---|---|
-| `node:22-bookworm-slim` | 349 MB | 1.34 GB | 826 MB |
+| `node:22-bookworm-slim` | 349 MB | 1.39 GB | 878 MB |
 | `dhi.io/node:22-debian12-dev` | 502 MB | 1.19 GB | 902 MB |
 
 The "as built" column is misleading. The standard image carries npm 10, which
 leaves a 409 MB cache; DHI carries npm 11 and leaves 219 MB. Clear the cache and
-the standard image is 76 MB smaller.
+the standard image is 24 MB smaller, because the DHI dev base is 153 MB larger
+to start with.
 
 Docker Scout totals on the final images (they drift over time):
 
 ```text
-node:22-bookworm-slim         126 total   0C  26H  22M  67L  11?
+node:22-bookworm-slim         130 total   0C  28H  23M  67L  12?
 dhi.io/node:22-debian12-dev   123 total   0C  24H  22M  65L  12?
 ```
 
-Three findings apart, and almost all of them come from the application layer,
-which is identical in both images: 191 npm package directories, 267 MB. The
-Debian packages I checked (libc6, libssl3, openssl, zlib1g, libgnutls30, git,
-curl) are the same versions, because both bases are Debian 12 at the current
-patch level.
+Seven findings apart. Both images carry the same application layer: 191 npm
+package directories, 267 MB, plus the same `gh` binary. The difference is in the
+base packages. The Debian packages I checked (libc6, libssl3, openssl, zlib1g,
+libgnutls30, git, curl) are the same versions, because both bases are Debian 12
+at the current patch level.
 
 The DHI runtime variant is 184 MB but has no shell and no apt, so it cannot
 satisfy the sandbox platform floor. The `-dev` variant keeps bash, apt and git,
