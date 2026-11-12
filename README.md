@@ -48,8 +48,8 @@ sbx secret set commandcode
 # 3. Optional, for gh
 sbx secret set github
 
-# 4. Create a sandbox from the kit and mount a project
-sbx create --name cmd-demo ./command-code ~/projects/hello-cmd
+# 4. Create a sandbox from the kit and mount the included example
+sbx create --name cmd-demo ./command-code ./examples/hello-cmd
 
 # 5. Launch the TUI
 sbx run --name cmd-demo
@@ -76,7 +76,8 @@ The approval is written to `~/.config/sbx/credentials.yaml`. The key values stay
 in the keychain; that file records the domains you approved.
 
 There is no example project in the sandbox unless you pass one. This repository
-includes `examples/hello-cmd` if you want something disposable to start with.
+includes `examples/hello-cmd` for a first run; replace that path with your own
+project whenever you are ready.
 
 ## Using the kits
 
