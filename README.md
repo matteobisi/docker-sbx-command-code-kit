@@ -1,21 +1,17 @@
-# Docker Sandboxes kits for Command Code (cmd)
+# Docker Sandboxes kit for Command Code (cmd)
 
-Two [Docker Sandboxes](https://docs.docker.com/ai/sandboxes) v3 workload kits for
+A [Docker Sandboxes](https://docs.docker.com/ai/sandboxes) v3 workload kit for
 [Command Code](https://commandcode.ai), the coding agent whose TUI is `cmd`.
-Both install the GitHub CLI as a worked example of adding another command.
+It also installs the GitHub CLI as a worked example of adding another command.
 
-`sbx` ships no Command Code template. These kits run `cmd` inside a microVM with
+`sbx` ships no Command Code template. This kit runs `cmd` inside a microVM with
 a proxy-managed API key, a short egress allow list and no access to the host.
 
 Companion article with the full walkthrough and measurements:
 **https://www.msbiro.net/posts/docker-sbx-command-code-kit/**
 
-## Kits
-
-| Directory | Base image | Notes |
-|---|---|---|
-| `command-code/` | `node:22-bookworm-slim` | Recommended. `cmd` plus `gh`. |
-| `command-code-dhi/` | `dhi.io/node:22-debian12-dev` | Same tools on a Docker Hardened Image base. |
+The kit lives in `command-code/`: a descriptor and a Dockerfile on
+`node:22-bookworm-slim`.
 
 ## Requirements
 
@@ -34,8 +30,8 @@ sbx login
 sbx secret set commandcode
 sbx secret set github        # optional, for gh
 
-sbx create --name cmd-demo ./command-code ./examples/hello-cmd
-sbx run --name cmd-demo
+sbx create --name command-code ./command-code ./examples/hello-cmd
+sbx run --name command-code
 ```
 
 The first create asks you to approve the kit's credential requests. Choose
@@ -47,7 +43,6 @@ credentials. Replace `./examples/hello-cmd` with your own project when ready.
 - [Architecture, credentials and security](docs/architecture.md)
 - [Usage, arguments and updating](docs/usage.md)
 - [Adding more commands](docs/adding-commands.md)
-- [The DHI variant](docs/dhi.md)
 - [Troubleshooting](docs/troubleshooting.md)
 
 ## License

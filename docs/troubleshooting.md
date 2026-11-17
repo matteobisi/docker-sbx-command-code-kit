@@ -32,7 +32,7 @@ Check for centralized governance. Under an organization policy, local and kit
 allow rules can be inactive:
 
 ```bash
-sbx policy check network api.commandcode.ai --sandbox cmd-demo
+sbx policy check network api.commandcode.ai --sandbox command-code
 sbx policy ls --include-inactive
 ```
 
@@ -41,10 +41,11 @@ Signing in with an account that is not governed removes the restriction.
 
 ## `x509: certificate signed by unknown authority`
 
-On DHI, the proxy CA has nowhere to land. Create
-`/usr/local/share/ca-certificates` and run `update-ca-certificates` in the
-Dockerfile. On other images, check that `/etc/ssl/certs/ca-certificates.crt`
-exists and that `SSL_CERT_FILE` and `NODE_EXTRA_CA_CERTS` point at it.
+The proxy CA did not reach the trust store the client reads. Check that
+`/etc/ssl/certs/ca-certificates.crt` exists and that `NODE_EXTRA_CA_CERTS`
+points at it. On a different base image, also check that
+`/usr/local/share/ca-certificates` exists and that `update-ca-certificates` is
+installed; some minimal images ship without them.
 
 ## `gh auth status` says the token is invalid
 
@@ -54,15 +55,16 @@ should read `proxy-managed`; the proxy replaces it on the way out.
 
 ## `cmd: command not found`
 
-The npm global prefix is `/home/agent/.npm-global` and `PATH` includes its `bin`.
-The kit also links `cmd` into `/usr/local/bin`. If you built a different image,
-check both paths and that the install ran as `agent`.
+The kit installs the package as root with npm's default prefix, so `cmd` lands
+in `/usr/local/bin`. If you changed the base image or set `NPM_CONFIG_PREFIX`,
+check that the prefix's `bin` is on `PATH` for the `agent` user.
 
 ## `npm i -g` inside the sandbox fails
 
-The sandbox policy does not allow the npm registry. Add it to your own policy or
-to a mixin; the kit deliberately does not allow it at run time. Auto-update is
-disabled for the same reason.
+Two reasons, both deliberate. The global prefix is owned by root, so the agent
+cannot replace installed packages, and the policy does not allow the npm
+registry at run time. Auto-update is disabled for the same reason. To change
+the Command Code version, rebuild with `--kit-arg version=x.y.z`.
 
 ## The sandbox starts but every model call fails
 
@@ -70,8 +72,8 @@ Two common causes: the credential was not approved (see above), or egress is
 denied by governance. Confirm with:
 
 ```bash
-sbx exec cmd-demo sh -c 'echo $COMMAND_CODE_API_KEY'
-sbx policy log cmd-demo
+sbx exec command-code sh -c 'echo $COMMAND_CODE_API_KEY'
+sbx policy log command-code
 ```
 
 The variable should print `proxy-managed`, and the log should show allowed
@@ -83,6 +85,6 @@ An existing sandbox keeps the image and entrypoint it was created with. Create a
 sandbox with a different name, or remove and recreate it:
 
 ```bash
-sbx rm --force cmd-demo
-sbx create --name cmd-demo ./command-code ./examples/hello-cmd
+sbx rm --force command-code
+sbx create --name command-code ./command-code ./examples/hello-cmd
 ```

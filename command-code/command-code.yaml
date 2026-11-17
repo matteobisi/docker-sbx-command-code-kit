@@ -3,10 +3,8 @@ schemaVersion: "3"
 displayName: Command Code (cmd)
 author: "Matteo Bisi"
 description: >-
-  The Command Code TUI (cmd) as a complete sandbox workload: Node.js 22 base,
-  the CLI installed with npm i -g command-code@latest, the GitHub CLI as a
-  second command, proxy-managed credentials, scoped egress, and a sandbox
-  AGENTS.md.
+  The Command Code TUI (cmd) on Node.js 22, with the GitHub CLI as a second
+  command, proxy-managed credentials, scoped egress, and a sandbox AGENTS.md.
 sourceUrl: https://github.com/matteobisi/docker-sbx-command-code-kit
 
 kind: workload

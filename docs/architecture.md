@@ -38,22 +38,22 @@ store, and a writable home. The Node image already uses uid 1000 for a user
 called `node`, so the Dockerfile replaces that account rather than creating a
 second one.
 
-`cmd` is installed with `npm i -g command-code@latest`. The package exposes four
-binaries that point at the same entry point: `cmd`, `cmdc`, `command-code`, and
-`commandcode`. The kit links `cmd` into `/usr/local/bin`, so it resolves even if
-`PATH` changes, and the build asserts that both paths resolve to the same file.
-
-The npm install clears its cache in the same layer. Without that step the image
-carries about 400 MB of tarballs that no run needs.
+`cmd` is installed as root with `npm i -g command-code@<version>`, so it lands
+in `/usr/local/bin` and the agent cannot modify its own binary. The package
+exposes four binaries that point at the same entry point: `cmd`, `cmdc`,
+`command-code`, and `commandcode`. It also bundles ripgrep through the
+`@vscode/ripgrep` optional dependency; the apt `ripgrep` is there for the
+agent's shell commands. The npm cache sits in a BuildKit cache mount, so its
+tarballs never reach the image.
 
 `gh` is installed from the official release tarball with the checksum verified
 and `TARGETARCH` selecting the architecture, so the same recipe builds for arm64
 and amd64. BuildKit only exposes `TARGETARCH` when the Dockerfile declares it
 with `ARG TARGETARCH`.
 
-The certificate variables (`SSL_CERT_FILE`, `NODE_EXTRA_CA_CERTS`) point at the
-system bundle because every HTTPS request leaves through a proxy that terminates
-TLS with its own CA.
+`NODE_EXTRA_CA_CERTS` points Node at the system bundle because every HTTPS
+request leaves through a proxy that terminates TLS with its own CA, and Node
+otherwise trusts only its built-in roots.
 
 ## Launch behaviour
 
@@ -90,9 +90,6 @@ values never enter the VM.
 ├── command-code/
 │   ├── command-code.yaml
 │   └── command-code.dockerfile
-├── command-code-dhi/
-│   ├── command-code-dhi.yaml
-│   └── command-code-dhi.dockerfile
 ├── docs/
 ├── examples/
 │   └── hello-cmd/

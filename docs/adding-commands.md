@@ -1,24 +1,22 @@
 # Adding more commands
 
-The `gh` install in both Dockerfiles is the template to copy:
+The `gh` install in the Dockerfile is the template to copy:
 
 ```dockerfile
 ARG TARGETARCH
-RUN case "$TARGETARCH" in \
-      amd64) gharch=amd64 ;; \
-      arm64) gharch=arm64 ;; \
-      *) echo "unsupported TARGETARCH: $TARGETARCH" >&2; exit 1 ;; \
-    esac \
- && curl -fsSLO "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${gharch}.tar.gz" \
- && curl -fsSLO "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_checksums.txt" \
- && grep " gh_${GH_VERSION}_linux_${gharch}.tar.gz\$" "gh_${GH_VERSION}_checksums.txt" | sha256sum -c - \
- && tar -xzf "gh_${GH_VERSION}_linux_${gharch}.tar.gz" \
- && install -m 0755 "gh_${GH_VERSION}_linux_${gharch}/bin/gh" /usr/local/bin/gh
+RUN asset="gh_${GH_VERSION}_linux_${TARGETARCH}.tar.gz" \
+ && base="https://github.com/cli/cli/releases/download/v${GH_VERSION}" \
+ && curl -fsSLo /tmp/gh.tgz "${base}/${asset}" \
+ && echo "$(curl -fsSL "${base}/gh_${GH_VERSION}_checksums.txt" | grep " ${asset}\$" | cut -d' ' -f1)  /tmp/gh.tgz" \
+      | sha256sum -c - \
+ && tar -xzf /tmp/gh.tgz -C /usr/local --strip-components=1 --wildcards '*/bin/gh' \
+ && rm /tmp/gh.tgz
 ```
 
 BuildKit only exposes `TARGETARCH` when the Dockerfile declares it with
-`ARG TARGETARCH`. Without the declaration the variable is empty and the build
-fails at the architecture check.
+`ARG TARGETARCH`. Without the declaration the variable is empty and the download
+fails. `gh` names its assets `amd64` and `arm64`, like `TARGETARCH`; a tool with
+different names (`x86_64`, `aarch64`) needs a mapping.
 
 ## Three parts to every new command
 
@@ -40,13 +38,12 @@ is combined with another workload or published as a mixin.
 ## Notes from the gh implementation
 
 - The release tarball ships a directory named after the archive; the binary is
-  inside `bin/`.
-- The checksum file lists every platform. Grep for the exact asset name before
-  `sha256sum -c`; checking the whole file fails on assets you did not download.
-- `install -m 0755` avoids a separate `chmod` and works on a read-only source
-  tree.
-- Install as root into `/usr/local/bin` if the command is for every user, or as
-  `agent` into `/home/agent/.npm-global/bin` for npm packages.
+  inside `bin/`. `--strip-components=1` with a `*/bin/gh` filter extracts only
+  the binary into `/usr/local/bin`.
+- The checksum file lists every platform. Pick the line for the exact asset;
+  checking the whole file fails on assets you did not download.
+- Install as root, into `/usr/local`. The binary is then on `PATH` and the agent
+  cannot modify it. The same applies to npm packages: `npm i -g` as root.
 - If the tool reads configuration on first run, create its config directory in
   the Dockerfile and chown it to `agent` so the sandbox can write to it.
 
@@ -85,7 +82,7 @@ Store the token on the host with `sbx secret set github`, approve the binding on
 first create, and verify from inside the sandbox:
 
 ```bash
-sbx exec cmd-demo sh -c 'gh auth status; gh api user -q .login'
+sbx exec command-code sh -c 'gh auth status; gh api user -q .login'
 ```
 
 `gh auth status` reports the real account while `GH_TOKEN` holds only
