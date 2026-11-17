@@ -28,6 +28,22 @@ sbx run --name command-code
 `sbx run` with a kit path creates a new sandbox. `sbx run --name NAME` attaches to
 an existing one and uses the entrypoint it was created with.
 
+## From another directory
+
+A kit reference is only treated as local when it is an explicit path: it starts
+with `./`, `../`, `/` or `~/`. Anything else is a sandbox name, a built-in agent,
+or an OCI reference, which is why `docker-sbx-command-code-kit/command-code`
+fails with a Docker Hub `401 unauthorized`.
+
+```bash
+cd ~/projects
+sbx run --name my-app ~/docker-sbx-command-code-kit/command-code ./my-app
+sbx run --name my-app                # later, from anywhere
+```
+
+Use one sandbox name per project. An existing name reopens that sandbox with its
+original workspace and ignores the path you pass.
+
 ## Permission modes
 
 The entrypoint runs `cmd` in YOLO mode. To get the normal permission ladder

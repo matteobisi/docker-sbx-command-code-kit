@@ -36,7 +36,38 @@ sbx run --name command-code
 
 The first create asks you to approve the kit's credential requests. Choose
 `1. Approve all`; the default is `3. No`, which starts the sandbox without
-credentials. Replace `./examples/hello-cmd` with your own project when ready.
+credentials.
+
+## Using it on your own project
+
+Each project gets its own sandbox: one name, one workspace. Pass the kit as an
+explicit path (starting with `./`, `../`, `/` or `~/`) from wherever you are:
+
+```bash
+cd ~/projects
+sbx run --name my-app ~/docker-sbx-command-code-kit/command-code ./my-app
+```
+
+Later, reopen it by name from any directory:
+
+```bash
+sbx run --name my-app
+```
+
+Two mistakes to avoid:
+
+- **A kit path without `./` or `/`.** `sbx run docker-sbx-command-code-kit/command-code`
+  is read as a Docker Hub image and fails with `401 unauthorized`. A bare
+  `command-code` is read as a sandbox or agent name.
+- **Reusing a sandbox name.** `--name command-code` reopens the sandbox created
+  above, still mounted on `examples/hello-cmd`; the new path is ignored.
+
+To skip typing the kit path, use a shell alias:
+
+```bash
+alias sbx-cmd='sbx run ~/docker-sbx-command-code-kit/command-code'
+sbx-cmd --name my-app ~/projects/my-app
+```
 
 ## Documentation
 
